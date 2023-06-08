@@ -1,5 +1,6 @@
 package com.cos.security.controller;
 
+import com.cos.security.config.auth.PrincipalDetails;
 import com.cos.security.domain.Role;
 import com.cos.security.domain.User;
 import com.cos.security.repository.UserRepository;
@@ -7,7 +8,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,13 +26,45 @@ public class IndexController {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
-    @GetMapping("/")
+    @ResponseBody
+    @GetMapping("/test/login")
+    public String testLogin(Authentication authentication,
+                            // 해당 어노테이션으로 세션 정보에 접근이 가능 , principalDetails가 userDetails를 implements 했기 때문에 변환이 가능
+                            //@AuthenticationPrincipal UserDetails userDetails,
+                            @AuthenticationPrincipal PrincipalDetails userDetails){ // DI (의존성 주입)
+        PrincipalDetails principalDetails =  (PrincipalDetails) authentication.getPrincipal();
+        log.info("authentication ={}",principalDetails.getUser());
+
+        log.info("userDetails={}", userDetails.getUsername());
+
+        return "세션 정보 확인하기";
+    }
+
+    @ResponseBody
+    @GetMapping("/test/oauth/login")
+    public String testOauthLogin(Authentication authentication,
+                                 @AuthenticationPrincipal OAuth2User oauth){ // DI (의존성 주입)
+        OAuth2User oAuth2User =  (OAuth2User) authentication.getPrincipal();
+        log.info("authentication ={}",oAuth2User.getAttributes());
+        log.info("oauth2User={}", oauth.getAttributes());
+
+        return "OAuth 세션 정보 확인하기";
+    }
+
+    // localhost:8080 or localhost:8080/
+    @GetMapping({",","/"})
     public String index(){
         return "index";
     }
+
+    // OAuth 로그인을 해도 PrincipalDetails
+    // 일반 로그인을 해도 PrincipalDetails로 받음
+    //
     @ResponseBody
     @GetMapping("/user")
-    public String user(){
+    public String user(@AuthenticationPrincipal PrincipalDetails principalDetails){
+        log.info("principalDetails ={}", principalDetails.getUser());
+
         return "user";
     }
     @ResponseBody

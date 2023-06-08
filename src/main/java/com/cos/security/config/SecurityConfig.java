@@ -39,21 +39,30 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf().disable();
         http.authorizeRequests()
+                // 특정 리소스에 대한 권한을 설정 ( 인증처리 )
                 .antMatchers("/user/**").authenticated()
+                // 특정 리소스에 대한 권한 설정 (권한 여부에 따른 접근성 판단)
                 .antMatchers("/manager/**").access("hasRole('ROLE_ADMIN') or hasRole('ROLE_MANAGER')")
                 .antMatchers("/admin/**").access("hasRole('ROLE_ADMIN')")
+                // 외의 모든 요청에 대해서는 인증절차 없이 접근 허용
                 .anyRequest().permitAll()
                 .and()
+                // 로그인 페이지와 기타 로그인 처리 및 성공 실패 처리를 사용하겠다는 의미
                 .formLogin()
+                // 사용자가 정의한 로그인 페이지 사용 시 선언
                 .loginPage("/loginForm")
+                // 템플릿의 폼 action과 일치해야 함
+                // UsernamePasswordAuthenticationFilter가 실행
                 .loginProcessingUrl("/login") // /login 주소가 호출되면 시큐리티가 낚아채서 대신 로그인을 진행해줌( 컨트롤러에 /login 을 따로 만들지 않아도 됨)
+                // 정상적으로 인증 성공 시 이동하는 페이지
                 .defaultSuccessUrl("/")
                 .and()
+                // OAuth2 로그인에 대한 설정을 시작하겠다는 의미
                 .oauth2Login()
                 .loginPage("/loginForm")// 구글 로그인 페이지로 이동 , 이제 로그인 후 처리 로직이 필요함. Tip. 구글 로그인이 완료가 되면 코드 X , (엑세스 토큰 + 사용자 프로필 정보 O)를 한번에 받음
+                // oauth2 Login에 성공하면 oauth2UserService에서 설정을 진행하겠다라는 의미입니다.
                 .userInfoEndpoint()
                 .userService(oauth2UserService);
-
         return http.build();
     }
 }
